@@ -16,9 +16,11 @@ std::ostream &operator<<(std::ostream &os, const Player &player)
 
 std::ostream &operator<<(std::ostream &os, const State &state)
 {
-	for (int r = 0; r < 3; r++) {
+	for (int r = 0; r < 3; r++) 
+	{
 		os << "+-+-+-+" << std::endl;
-		for (int c = 0; c < 3; c++) {
+		for (int c = 0; c < 3; c++)
+		{
 			os << "|" << state[r * 3 + c];
 		}
 		os << "|" << std::endl;
@@ -31,9 +33,16 @@ Player getCurrentPlayer(const State &state)
 {
 	int countX = 0;
 	int countO = 0;
-	for (int i = 0; i < 9; i++) {
-		if (state[i] == Player::X) countX++;
-		else if (state[i] == Player::O) countO++;
+	for (int i = 0; i < 9; i++)
+	{
+		if (state[i] == Player::X)
+		{
+			countX++;
+		}
+		else if (state[i] == Player::O)
+		{
+			countO++;
+		}
 	}
 	return (countX > countO ? Player::O : Player::X);
 }
@@ -43,9 +52,16 @@ State doMove(const State &state, const Move &m)
 	State result = state;
 	int countX = 0;
 	int countO = 0;
-	for (int i = 0; i < 9; i++) {
-		if (result[i] == Player::X) countX++;
-		else if (result[i] == Player::O) countO++;
+	for (int i = 0; i < 9; i++) 
+	{
+		if (result[i] == Player::X)
+		{
+			countX++;
+		}
+		else if (result[i] == Player::O)
+		{
+			countO++;
+		}
 	}
 	result[m] = (countX > countO ? Player::O : Player::X);
 	return result;

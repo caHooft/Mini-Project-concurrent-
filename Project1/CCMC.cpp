@@ -1,6 +1,7 @@
 #include "ttt.h"
 #include <iostream>
 #include <algorithm>
+#include <vector>
 #include <map>
 #include <thread>
 #include <mutex>
@@ -8,12 +9,12 @@
 
 using namespace std;
 array<int, 9> scores = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-State topboard;
+int trials = 1000;
 
 const int nr_threads = 1000;
 mutex ml;
 mutex scorelock;
-mutex fucklocks;
+mutex locks;
 
 enum class PlayerType
 {
@@ -60,9 +61,9 @@ void mcUpdateScores(array<int, 9> &subscores, State &trialboard, Player &winner)
 	}
 }
 
-State mcTrial(const State &board)
+void mcTrial(const State &board)
 {
-	State trialboard = topboard;
+	State trialboard = board;
 	array<int, 9> subscores = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	Player winner;
 
@@ -77,11 +78,6 @@ State mcTrial(const State &board)
 	winner = getWinner(trialboard);
 
 	mcUpdateScores(subscores, trialboard, winner);
-
-	fucklocks.lock();
-	topboard = board;
-	fucklocks.unlock();
-	return board;
 }
 
 Move getBestMove(State &board)
@@ -103,41 +99,41 @@ Move getBestMove(State &board)
 
 Move mcMove(State &board, const Player &player)
 {
-	topboard = board;
 	scores = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	/*
-	for (int i = 0; i < 10000; i++)
+	thread *tt = new thread[nr_threads - 1];
+	
+	//extra threads
+	for (int i = 0; i < nr_threads - 1; ++i)
 	{
-		board = mcTrial(board);
-	}
-	*/
-
-	thread threads[nr_threads];
-
-	for (int i = 0; i < nr_threads; ++i)
-	{
-		ml.lock();
-
-		threads[i] = thread(mcTrial, topboard);
-
-		ml.unlock();
-	}
-
-	// Join threads
-	for (auto &th : threads)
-	{
-		th.join();
+		tt[i] = thread(mcTrial, ref(board));
 	}
 	
-	return getBestMove(topboard);
+	/*
+	for (int i = 0; i < trials; i++)
+	{
+		mcTrial(board);
+	}
+	*/
+	
+
+	//Join extra threads
+	
+	for (int i = 0; i < nr_threads - 1; ++i)
+	{
+		tt[i].join();
+	}
+	
+	
+		
+
+	return getBestMove(board);
 }
 
 int main()
-{
-	std::srand(std::time(0));
-
-	std::map<Player, PlayerType> playerType;
+{	
+	//srand(time(0));
+	map<Player, PlayerType> playerType;
 	playerType[Player::X] = PlayerType::Human;
 	playerType[Player::O] = PlayerType::Computer;
 
@@ -145,36 +141,39 @@ int main()
 	{
 			Player::None, Player::None, Player::None,
 			Player::None, Player::None, Player::None,
-			Player::None, Player::None, Player::None };
-	std::cout << board << std::endl;
+			Player::None, Player::None, Player::None 
+	};
+	cout << board << endl;
 
-	std::vector<Move> moves = getMoves(board);
+	vector<Move> moves = getMoves(board);
+
 	while (moves.size() > 0)
 	{
 		if (playerType[getCurrentPlayer(board)] == PlayerType::Human)
 		{
-			std::cout << "+-+-+-+" << std::endl
-				<< "|0|1|2|" << std::endl
-				<< "+-+-+-+" << std::endl
-				<< "|3|4|5|" << std::endl
-				<< "+-+-+-+" << std::endl
-				<< "|6|7|8|" << std::endl
-				<< "+-+-+-+" << std::endl
-				<< std::endl;
-			std::cout << "Enter a move ( ";
+			cout << "+-+-+-+" << endl
+				<< "|0|1|2|" << endl
+				<< "+-+-+-+" << endl
+				<< "|3|4|5|" << endl
+				<< "+-+-+-+" << endl
+				<< "|6|7|8|" << endl
+				<< "+-+-+-+" << endl
+				<< endl;
+			cout << "Enter a move ( ";
 			for (Move m : moves)
-				std::cout << m << " ";
-			std::cout << "): ";
+				cout << m << " ";
+			cout << "): ";
 			Move m;
-			std::cin >> m;
+			cin >> m;
 			board = doMove(board, m);
 		}
-
+		
 		else
 		{
 			board = doMove(board, mcMove(board, getCurrentPlayer(board)));
 		}
-		std::cout << board << std::endl;
+
+		cout << board << endl;
 		moves = getMoves(board);
 	}
 
