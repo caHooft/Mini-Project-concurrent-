@@ -11,7 +11,7 @@ using namespace std;
 array<int, 9> scores = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int trials = 1000;
 
-const int nr_threads = 1000;
+const int nr_threads = 10;
 mutex ml;
 mutex scorelock;
 mutex locks;
@@ -55,6 +55,7 @@ void mcUpdateScores(array<int, 9> &subscores, State &trialboard, Player &winner)
 
 	for (int i = 0; i < 9; i++)
 	{
+		//lock and unlock score
 		scorelock.lock();
 		scores[i] = scores[i] + subscores[i];
 		scorelock.unlock();
@@ -97,6 +98,14 @@ Move getBestMove(State &board)
 	return index;
 }
 
+void muliplier(const State &board)
+{
+	for (int i = 0; i < trials; i++)
+	{
+		mcTrial(board);
+	}
+}
+
 Move mcMove(State &board, const Player &player)
 {
 	scores = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -106,27 +115,17 @@ Move mcMove(State &board, const Player &player)
 	//extra threads
 	for (int i = 0; i < nr_threads - 1; ++i)
 	{
-		tt[i] = thread(mcTrial, ref(board));
+		tt[i] = thread(muliplier, ref(board));
+
 	}
-	
-	/*
-	for (int i = 0; i < trials; i++)
-	{
-		mcTrial(board);
-	}
-	*/
-	
+	//main thread
+	muliplier(board);
 
 	//Join extra threads
-	
 	for (int i = 0; i < nr_threads - 1; ++i)
 	{
 		tt[i].join();
 	}
-	
-	
-		
-
 	return getBestMove(board);
 }
 
@@ -176,6 +175,5 @@ int main()
 		cout << board << endl;
 		moves = getMoves(board);
 	}
-
 	return 0;
 }
